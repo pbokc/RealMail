@@ -40,7 +40,7 @@ export async function POST(req: Request) {
     db.prepare(
       "INSERT INTO passkeys (credential_id, user_id, public_key, counter, transports) VALUES (?, ?, ?, ?, ?)"
     ).run(
-      Buffer.from(cred.id).toString("base64url"),
+      cred.id,
       userId,
       Buffer.from(cred.publicKey),
       cred.counter,

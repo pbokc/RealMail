@@ -61,7 +61,6 @@ function ThreadContent() {
           ? lastMsg.to_address
           : lastMsg.from_address;
 
-      // Step 1: Request send challenge
       const res = await fetch("/api/messages/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -81,11 +80,8 @@ function ThreadContent() {
       }
 
       const { options, challengeId } = await res.json();
-
-      // Step 2: Passkey authentication (FaceID/TouchID)
       const credential = await startAuthentication({ optionsJSON: options });
 
-      // Step 3: Verify and send
       const verifyRes = await fetch("/api/messages/send-verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -97,7 +93,6 @@ function ThreadContent() {
         throw new Error(data.error || "Send failed");
       }
 
-      // Refresh messages
       setReplyBody("");
       const threadRes = await fetch(`/api/messages/thread?id=${threadId}`);
       const threadData = await threadRes.json();
@@ -109,13 +104,25 @@ function ThreadContent() {
     }
   }
 
+  function formatDate(dateStr: string) {
+    const d = new Date(dateStr);
+    return d.toLocaleString([], {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  }
+
   if (!threadId) return <p>No thread selected</p>;
 
   return (
-    <div className="max-w-2xl mx-auto p-4">
+    <div className="max-w-3xl mx-auto p-4">
       <button
         onClick={() => router.push("/inbox")}
-        className="text-blue-600 hover:underline mb-4 inline-block"
+        className="text-blue-600 hover:underline mb-4 inline-block text-sm"
       >
         &larr; Back to Inbox
       </button>
@@ -124,51 +131,69 @@ function ThreadContent() {
         <p className="text-gray-500">Loading...</p>
       ) : (
         <>
-          <h1 className="text-xl font-bold mb-4">
+          <h1 className="text-xl font-bold mb-6">
             {messages[0]?.subject || "Thread"}
           </h1>
 
-          <div className="space-y-4 mb-6">
-            {messages.map((msg) => (
+          <div className="space-y-0 border border-gray-200 rounded-lg bg-white">
+            {messages.map((msg, i) => (
               <div
                 key={msg.id}
-                className={`p-4 rounded-lg ${
-                  msg.from_address === address
-                    ? "bg-blue-50 ml-8"
-                    : "bg-white shadow mr-8"
-                }`}
+                className={i < messages.length - 1 ? "border-b border-gray-200" : ""}
               >
-                <div className="flex justify-between items-start mb-2">
-                  <span className="text-sm font-medium">
-                    {msg.from_address === address ? "You" : msg.from_address}
-                  </span>
-                  <span className="text-xs text-gray-400">
-                    {new Date(msg.sent_at).toLocaleString()}
-                  </span>
+                <div className="px-6 py-4">
+                  <div className="flex justify-between items-baseline mb-3">
+                    <div>
+                      <span className="font-medium text-sm text-gray-900">
+                        {msg.from_address === address ? "You" : msg.from_address}
+                      </span>
+                      <span className="text-sm text-gray-500 ml-2">
+                        to {msg.to_address === address ? "You" : msg.to_address}
+                      </span>
+                    </div>
+                    <span className="text-xs text-gray-400 whitespace-nowrap ml-4">
+                      {formatDate(msg.sent_at)}
+                    </span>
+                  </div>
+                  <div className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">
+                    {msg.body}
+                  </div>
                 </div>
-                <p className="text-sm whitespace-pre-wrap">{msg.body}</p>
               </div>
             ))}
           </div>
 
-          <form onSubmit={handleReply} className="space-y-3">
-            <textarea
-              value={replyBody}
-              onChange={(e) => setReplyBody(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              rows={3}
-              placeholder="Write a reply..."
-              required
-            />
-            {error && <p className="text-red-600 text-sm">{error}</p>}
-            <button
-              type="submit"
-              disabled={sending}
-              className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50"
-            >
-              {sending ? "Authenticating & Sending..." : "Reply (requires Passkey)"}
-            </button>
-          </form>
+          <div className="mt-6 border border-gray-200 rounded-lg bg-white p-6">
+            <form onSubmit={handleReply}>
+              <div className="text-sm text-gray-500 mb-3">
+                Reply to{" "}
+                {messages[messages.length - 1]?.from_address === address
+                  ? messages[messages.length - 1]?.to_address
+                  : messages[messages.length - 1]?.from_address}
+              </div>
+              <textarea
+                value={replyBody}
+                onChange={(e) => setReplyBody(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                rows={6}
+                placeholder="Write your reply..."
+                required
+              />
+              {error && <p className="text-red-600 text-sm mt-2">{error}</p>}
+              <div className="mt-3 flex items-center gap-3">
+                <button
+                  type="submit"
+                  disabled={sending}
+                  className="bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 text-sm"
+                >
+                  {sending ? "Sending..." : "Send Reply"}
+                </button>
+                <span className="text-xs text-gray-400">
+                  Requires passkey verification
+                </span>
+              </div>
+            </form>
+          </div>
         </>
       )}
     </div>
@@ -179,7 +204,7 @@ export default function ThreadPage() {
   return (
     <Suspense
       fallback={
-        <div className="max-w-2xl mx-auto p-4">
+        <div className="max-w-3xl mx-auto p-4">
           <p className="text-gray-500">Loading...</p>
         </div>
       }

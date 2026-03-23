@@ -46,9 +46,19 @@ export async function POST(req: Request) {
   }
 
   const { rpID } = getRpConfig();
+
+  // Get this user's passkeys so the browser only offers matching ones
+  const userPasskeys = db
+    .prepare("SELECT credential_id, transports FROM passkeys WHERE user_id = ?")
+    .all(session.userId) as { credential_id: string; transports: string }[];
+
   const options = await generateAuthenticationOptions({
     rpID,
     userVerification: "required",
+    allowCredentials: userPasskeys.map((pk) => ({
+      id: pk.credential_id,
+      transports: JSON.parse(pk.transports || "[]"),
+    })),
   });
 
   // Store challenge with message data
