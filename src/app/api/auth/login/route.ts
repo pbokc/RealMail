@@ -4,13 +4,35 @@ import { getDb } from "@/lib/db";
 import { getRpConfig } from "@/lib/auth";
 import crypto from "crypto";
 
-export async function POST() {
+export async function POST(req: Request) {
+  const { address } = await req.json();
+
+  if (!address) {
+    return NextResponse.json({ error: "Address required" }, { status: 400 });
+  }
+
   const db = getDb();
   const { rpID } = getRpConfig();
+
+  const user = db
+    .prepare("SELECT id FROM users WHERE address = ?")
+    .get(address) as { id: string } | undefined;
+
+  if (!user) {
+    return NextResponse.json({ error: "Account not found" }, { status: 404 });
+  }
+
+  const userPasskeys = db
+    .prepare("SELECT credential_id, transports FROM passkeys WHERE user_id = ?")
+    .all(user.id) as { credential_id: string; transports: string }[];
 
   const options = await generateAuthenticationOptions({
     rpID,
     userVerification: "required",
+    allowCredentials: userPasskeys.map((pk) => ({
+      id: pk.credential_id,
+      transports: JSON.parse(pk.transports || "[]"),
+    })),
   });
 
   const challengeId = crypto.randomUUID();

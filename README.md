@@ -2,6 +2,14 @@
 
 Human to human messaging with biometric auth. Every action — signup, login, and sending messages — requires WebAuthn passkey verification (Touch ID, Face ID, Windows Hello, or a hardware security key).
 
+Sending a message requires WebAuthn verification:
+
+![Touch ID authentication prompt when sending a message](realmail_touchid_auth.png)
+
+Email-style thread view with passkey-verified replies:
+
+![Example thread showing a conversation between two users](realmail_example_thread.png)
+
 ## Setup
 
 ```bash
@@ -39,4 +47,4 @@ To test between your computer and phone, you need an HTTPS tunnel. Passkeys requ
 
 4. Open the tunnel URL on both devices. Register a different account on each, then message between them.
 
-> **Note:** `RP_ID` and `ORIGIN` tell WebAuthn which domain the passkeys belong to. They must match the tunnel URL exactly. If you restart `cloudflared`, you get a new URL and need to re-register accounts.
+> **Note:** `RP_ID` and `ORIGIN` tell WebAuthn which domain the passkeys belong to. They must match the tunnel URL exactly. Each time `cloudflared` restarts, you get a new random domain — passkeys registered on the old domain won't work, so you'll need to re-register accounts. To avoid this, use a stable tunnel domain (e.g. a free [ngrok](https://ngrok.com) account or a [named Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/tunnel-guide/local/)).
