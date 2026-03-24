@@ -17,15 +17,17 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const fullAddress = address.includes("@")
-        ? address
-        : `${address}@realmail.app`;
+      const trimmedAddress = address.trim();
+      const trimmedDisplayName = displayName.trim();
+      const fullAddress = trimmedAddress.includes("@")
+        ? trimmedAddress
+        : `${trimmedAddress}@realmail.app`;
 
       // Step 1: Get registration options
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ address: fullAddress, displayName }),
+        body: JSON.stringify({ address: fullAddress, displayName: trimmedDisplayName }),
       });
 
       if (!res.ok) {

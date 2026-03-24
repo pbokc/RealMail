@@ -5,7 +5,8 @@ import { getRpConfig } from "@/lib/auth";
 import crypto from "crypto";
 
 export async function POST(req: Request) {
-  const { address } = await req.json();
+  const body = await req.json();
+  const address = body.address?.trim();
 
   if (!address) {
     return NextResponse.json({ error: "Address required" }, { status: 400 });

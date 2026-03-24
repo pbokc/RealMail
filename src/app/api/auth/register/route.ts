@@ -5,7 +5,9 @@ import { getRpConfig } from "@/lib/auth";
 import crypto from "crypto";
 
 export async function POST(req: Request) {
-  const { address, displayName } = await req.json();
+  const body = await req.json();
+  const address = body.address?.trim();
+  const displayName = body.displayName?.trim();
 
   if (!address || !displayName) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });

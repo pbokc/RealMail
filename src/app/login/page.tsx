@@ -16,9 +16,10 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const fullAddress = address.includes("@")
-        ? address
-        : `${address}@realmail.app`;
+      const trimmedAddress = address.trim();
+      const fullAddress = trimmedAddress.includes("@")
+        ? trimmedAddress
+        : `${trimmedAddress}@realmail.app`;
 
       const res = await fetch("/api/auth/login", {
         method: "POST",
